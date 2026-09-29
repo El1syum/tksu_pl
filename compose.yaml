@@ -1,0 +1,31 @@
+services:
+  app:
+    build: .
+    image: tksu-pl:local
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8080
+      DATABASE_PATH: /data/expenses.db
+    ports:
+      - "127.0.0.1:${PORT}:8080"
+    volumes:
+      - expenses:/data
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+volumes:
+  expenses:
+

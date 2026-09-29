@@ -1,0 +1,10 @@
+.git
+.env
+.env.*
+data
+bin
+tmp
+docs/screenshots
+*.db*
+*.exe
+

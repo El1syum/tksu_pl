@@ -1,0 +1,33 @@
+services:
+  app:
+    image: tksu-pl:${RELEASE_TAG}
+    container_name: tksu-pl
+    restart: unless-stopped
+    env_file: /opt/tksu-pl/shared/.env
+    ports:
+      - "127.0.0.1:8095:8080"
+    volumes:
+      - /opt/tksu-pl/shared/data:/data
+    networks:
+      - edge
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 256m
+    cpus: 1.0
+    pids_limit: 100
+    stop_grace_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+networks:
+  edge:
+    external: true
+    name: botmost_web
+

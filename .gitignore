@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+/data/
+/bin/
+*.db
+*.db-shm
+*.db-wal
+*.exe
+*.test
+coverage.out
+.DS_Store
+/tmp/
+

@@ -1,0 +1,9 @@
+# Add to an existing Caddy configuration; this file does not replace other sites.
+integradar.org {
+    encode zstd gzip
+    reverse_proxy tksu-pl:8080
+}
+www.integradar.org {
+    redir https://integradar.org{uri} permanent
+}
+
