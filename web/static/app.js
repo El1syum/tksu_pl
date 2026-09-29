@@ -9,4 +9,3 @@ document.querySelectorAll("[data-password]").forEach(button => {
     button.setAttribute("aria-pressed", String(show));
   });
 });
-

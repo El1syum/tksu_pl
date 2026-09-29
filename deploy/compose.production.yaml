@@ -30,4 +30,3 @@ networks:
   edge:
     external: true
     name: botmost_web
-

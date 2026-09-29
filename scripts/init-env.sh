@@ -6,4 +6,3 @@ umask 077
 secret=$(openssl rand -hex 32)
 sed "s/^SESSION_SECRET=$/SESSION_SECRET=$secret/" .env.example > .env
 echo 'Created .env. Run: go run .'
-

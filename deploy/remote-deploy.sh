@@ -42,4 +42,3 @@ fi
 if [ -n "$previous" ]; then printf '%s\n' "$previous" > "$root/shared/previous-release"; fi
 ln -sfn "$release" "$root/current"
 echo "Deployed tksu-pl:$tag; local /ping is healthy."
-

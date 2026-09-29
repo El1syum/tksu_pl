@@ -34,4 +34,3 @@ scp 'deploy/remote-deploy.sh' "${Server}:/tmp/tksu-pl-remote-deploy.sh"
 if ($LASTEXITCODE -ne 0) { throw 'Script upload failed' }
 ssh $Server "sudo -n bash /tmp/tksu-pl-remote-deploy.sh $ReleaseTag"
 if ($LASTEXITCODE -ne 0) { throw 'Remote deployment failed; previous image is retained for rollback.' }
-

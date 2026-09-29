@@ -32,4 +32,3 @@ CREATE TABLE sessions (
  expires_at INTEGER NOT NULL
 );
 CREATE INDEX sessions_expiry ON sessions(expires_at);
-

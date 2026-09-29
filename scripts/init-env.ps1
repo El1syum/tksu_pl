@@ -10,4 +10,3 @@ $secret = ([BitConverter]::ToString($bytes)).Replace('-', '').ToLowerInvariant()
 $content = [System.IO.File]::ReadAllText((Join-Path $projectRoot '.env.example')).Replace('SESSION_SECRET=', "SESSION_SECRET=$secret")
 [System.IO.File]::WriteAllText($envPath, $content, [System.Text.UTF8Encoding]::new($false))
 Write-Output 'Created .env with a random session secret. Run: go run .'
-

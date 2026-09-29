@@ -163,6 +163,13 @@ func TestFullJourneyAndIsolation(t *testing.T) {
 }
 func TestCSRFExpiryAndErrors(t *testing.T) {
 	h := fixture(t)
+	for _, method := range []string{"POST", "HEAD", "DELETE"} {
+		w := httptest.NewRecorder()
+		h.Routes().ServeHTTP(w, httptest.NewRequest(method, "http://example.com/ping", nil))
+		if w.Code != 405 || w.Header().Get("Allow") != "GET" {
+			t.Fatalf("unauthenticated %s /ping: %d", method, w.Code)
+		}
+	}
 	c := makeClient(t, h, "security@example.com")
 	r := httptest.NewRequest("POST", "http://example.com/expenses", strings.NewReader("amount=1"))
 	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")

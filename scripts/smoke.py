@@ -10,6 +10,7 @@ import json
 import re
 import secrets
 import sys
+from html import unescape
 from http.cookiejar import CookieJar
 from urllib.error import HTTPError
 from urllib.parse import urlencode
@@ -25,7 +26,7 @@ class Client:
 
     def get(self, path):
         with self.opener.open(base + path, timeout=20) as response:
-            body = response.read().decode('utf-8-sig')
+            body = unescape(response.read().decode('utf-8-sig'))
             match = re.search(r'name="csrf" value="([^"]+)"', body)
             if match:
                 self.csrf = match.group(1)
@@ -35,7 +36,7 @@ class Client:
         data = urlencode(dict(values, csrf=self.csrf)).encode()
         request = Request(base + path, data=data, headers={'Origin': base})
         with self.opener.open(request, timeout=20) as response:
-            body = response.read().decode()
+            body = unescape(response.read().decode())
             match = re.search(r'name="csrf" value="([^"]+)"', body)
             if match:
                 self.csrf = match.group(1)
