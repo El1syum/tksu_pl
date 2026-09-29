@@ -1,5 +1,5 @@
 {{define "layout"}}<!doctype html>
-<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#117665"><title>{{.Title}} · Траты</title><link rel="icon" href="/static/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/static/app.css"><script src="/static/app.js" defer></script>{{if eq .Active "stats"}}<script src="/static/vendor/chart.umd.min.js" defer></script><script src="/static/stats.js" defer></script>{{end}}</head>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#117665"><title>{{.Title}} · Траты</title><link rel="icon" href="/static/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/static/app.css?v={{.AssetVersion}}"><script src="/static/app.js?v={{.AssetVersion}}" defer></script>{{if eq .Active "stats"}}<script src="/static/vendor/chart.umd.min.js" defer></script><script src="/static/stats.js?v={{.AssetVersion}}" defer></script>{{end}}</head>
 <body><a class="skip-link" href="#main">К содержимому</a>
 {{if .User}}
 <div class="app-shell"><aside class="sidebar"><a class="brand" href="/expenses"><span class="brand-mark">{{template "mark"}}</span>траты<span class="brand-dot">.</span></a><div class="workspace-label">ЛИЧНЫЕ ФИНАНСЫ</div>

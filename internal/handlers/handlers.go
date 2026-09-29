@@ -28,6 +28,7 @@ type Handler struct {
 }
 type Form struct{ Amount, Description, Date, CategoryID, Email string }
 type Page struct {
+	AssetVersion                                                                        string
 	Title, Active, CSRF, Error, Notice, Action, FilterQuery, PrevURL, NextURL, From, To string
 	User                                                                                *models.User
 	Categories                                                                          []models.Category
@@ -105,6 +106,7 @@ func (h *Handler) Routes() http.Handler {
 	return h.logging(h.recovery(h.security(h.session(h.csrf(mux)))))
 }
 func (h *Handler) render(w http.ResponseWriter, r *http.Request, name string, status int, p Page) {
+	p.AssetVersion = web.Version()
 	p.User = currentUser(r)
 	p.CSRF, _ = r.Context().Value(csrfKey).(string)
 	var b bytes.Buffer
