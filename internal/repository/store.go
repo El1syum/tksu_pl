@@ -11,10 +11,12 @@ import (
 )
 
 type Store struct {
-	DB       *sql.DB
-	Expenses *ExpenseRepository
-	Users    *UserRepository
-	Sessions *SessionRepository
+	DB        *sql.DB
+	Expenses  *ExpenseRepository
+	Users     *UserRepository
+	Sessions  *SessionRepository
+	Budgets   *BudgetRepository
+	Recurring *RecurringRepository
 }
 
 func Open(path string) (*Store, error) {
@@ -33,7 +35,7 @@ func Open(path string) (*Store, error) {
 	if err = migrate(db); err != nil {
 		return fail(err)
 	}
-	return &Store{db, &ExpenseRepository{db}, &UserRepository{db}, &SessionRepository{db}}, nil
+	return &Store{DB: db, Expenses: &ExpenseRepository{db}, Users: &UserRepository{db}, Sessions: &SessionRepository{db}, Budgets: &BudgetRepository{db}, Recurring: &RecurringRepository{db}}, nil
 }
 func migrate(db *sql.DB) error {
 	if _, err := db.Exec("CREATE TABLE IF NOT EXISTS schema_migrations (name TEXT PRIMARY KEY)"); err != nil {

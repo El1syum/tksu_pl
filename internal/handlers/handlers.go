@@ -26,8 +26,12 @@ type Handler struct {
 	templates map[string]*template.Template
 	limiter   *loginLimiter
 }
-type Form struct{ Amount, Description, Date, CategoryID, Email string }
+type Form struct{ Amount, Description, Date, CategoryID, Email, Frequency, EndDate string }
 type Page struct {
+	Theme, ReturnTo, Month                                                              string
+	Budgets, BudgetWarnings                                                             []models.Budget
+	Recurring                                                                           []models.Recurring
+	Rule                                                                                models.Recurring
 	AssetVersion                                                                        string
 	Title, Active, CSRF, Error, Notice, Action, FilterQuery, PrevURL, NextURL, From, To string
 	User                                                                                *models.User
@@ -44,7 +48,7 @@ type Page struct {
 
 func New(store *repository.Store, c config.Config, logger *slog.Logger) (*Handler, error) {
 	h := &Handler{store: store, config: c, log: logger, templates: map[string]*template.Template{}, limiter: newLoginLimiter()}
-	funcs := template.FuncMap{"money": models.Money, "decimal": models.Decimal, "date": func(s string) string {
+	funcs := template.FuncMap{"frequency": models.FrequencyLabel, "money": models.Money, "decimal": models.Decimal, "date": func(s string) string {
 		t, e := time.Parse("2006-01-02", s)
 		if e != nil {
 			return s
@@ -56,7 +60,7 @@ func New(store *repository.Store, c config.Config, logger *slog.Logger) (*Handle
 		}
 		return "?"
 	}}
-	for _, name := range []string{"auth", "expenses", "expense_form", "delete", "stats", "about", "404", "500", "error"} {
+	for _, name := range []string{"home", "budgets", "recurring", "recurring_form", "recurring_delete", "auth", "expenses", "expense_form", "delete", "stats", "about", "404", "500", "error"} {
 		t, err := template.New("layout").Funcs(funcs).ParseFS(web.Files, "templates/layout.html", "templates/"+name+".html")
 		if err != nil {
 			return nil, fmt.Errorf("template %s: %w", name, err)
@@ -68,12 +72,9 @@ func New(store *repository.Store, c config.Config, logger *slog.Logger) (*Handle
 func (h *Handler) Routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
-		if currentUser(r) != nil {
-			http.Redirect(w, r, "/expenses", http.StatusSeeOther)
-		} else {
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
-		}
+		h.render(w, r, "home", 200, Page{Title: "Добро пожаловать"})
 	})
+	mux.HandleFunc("POST /theme", h.setTheme)
 	mux.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			w.Header().Set("Allow", "GET")
@@ -97,6 +98,11 @@ func (h *Handler) Routes() http.Handler {
 		"GET /expenses/{id}/delete": h.deletePage, "POST /expenses/{id}/delete": h.deleteExpense,
 		"GET /stats": h.statsPage, "GET /api/stats/by-category": h.statsCategory, "GET /api/stats/by-month": h.statsMonth,
 		"GET /expenses/export": h.exportCSV,
+		"GET /budgets":         h.budgetsPage, "POST /budgets": h.saveBudget, "POST /budgets/{id}/delete": h.deleteBudget,
+		"GET /recurring": h.recurringList, "GET /recurring/new": h.recurringNew, "POST /recurring": h.recurringCreate,
+		"GET /recurring/{id}/edit": h.recurringEdit, "POST /recurring/{id}/edit": h.recurringUpdate,
+		"POST /recurring/{id}/pause": h.recurringPause, "POST /recurring/{id}/resume": h.recurringResume,
+		"GET /recurring/{id}/delete": h.recurringDeletePage, "POST /recurring/{id}/delete": h.recurringDelete,
 	} {
 		mux.Handle(route, h.requireAuth(fn))
 	}
@@ -107,6 +113,11 @@ func (h *Handler) Routes() http.Handler {
 }
 func (h *Handler) render(w http.ResponseWriter, r *http.Request, name string, status int, p Page) {
 	p.AssetVersion = web.Version()
+	p.Theme = "system"
+	if c, err := r.Cookie("theme"); err == nil && (c.Value == "dark" || c.Value == "light") {
+		p.Theme = c.Value
+	}
+	p.ReturnTo = r.URL.RequestURI()
 	p.User = currentUser(r)
 	p.CSRF, _ = r.Context().Value(csrfKey).(string)
 	var b bytes.Buffer

@@ -48,7 +48,8 @@ async function loadChart(kind) {
       }
     }
     if (!total) { status.textContent = "За этот период пока нет расходов. Добавьте трату или выберите другой период."; return; }
-    if (typeof Chart === "undefined") throw new Error("Не удалось загрузить графики. Данные доступны ниже; попробуйте обновить страницу.");
+    if (!(await chartReady)) throw new Error("Не удалось загрузить графики. Данные доступны ниже; попробуйте обновить страницу.");
+    if (request !== requests[kind]) return;
     area.hidden = false; status.hidden = true;
     const options = {
       responsive: true, maintainAspectRatio: false,
@@ -56,7 +57,12 @@ async function loadChart(kind) {
       plugins: {legend: {display: false}, tooltip: {backgroundColor: "#213a33", padding: 12, callbacks: {label: context => ` ${rubles((kind === "category" ? context.raw : context.parsed.y) * 100)}`}}}
     };
     if (kind === "category") options.cutout = "78%";
-    else options.scales = {x: {grid: {display: false}, border: {display: false}, ticks: {color: "#819089"}}, y: {beginAtZero: true, border: {display: false}, grid: {color: "#edf0ec"}, ticks: {color: "#819089", callback: value => new Intl.NumberFormat("ru-RU", {notation: "compact"}).format(value) + " ₽"}}};
+    else {
+      const style = getComputedStyle(document.documentElement);
+      const tickColor = style.getPropertyValue("--muted").trim();
+      const gridColor = style.getPropertyValue("--border").trim();
+      options.scales = {x: {grid: {display: false}, border: {display: false}, ticks: {color: tickColor}}, y: {beginAtZero: true, border: {display: false}, grid: {color: gridColor}, ticks: {color: tickColor, callback: value => new Intl.NumberFormat("ru-RU", {notation: "compact"}).format(value) + " ₽"}}};
+    }
     charts[kind] = new Chart(document.getElementById(`${kind}-chart`), {
       type: kind === "category" ? "doughnut" : "bar",
       data: {labels: kind === "category" ? data.map(d => d.name) : months,
@@ -67,6 +73,9 @@ async function loadChart(kind) {
     status.hidden = false; status.classList.add("error-text"); status.textContent = error.message || "Не удалось загрузить статистику. Попробуйте ещё раз.";
   } finally { if (request === requests[kind]) button.disabled = false; }
 }
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+  if (document.documentElement.dataset.theme === "system") for (const kind of ["category", "month"]) loadChart(kind);
+});
 for (const kind of ["category", "month"]) {
   document.getElementById(`${kind}-stats-form`).addEventListener("submit", event => { event.preventDefault(); loadChart(kind); });
   loadChart(kind);

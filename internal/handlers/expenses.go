@@ -95,6 +95,17 @@ func (h *Handler) list(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p.MonthTotal = month.Amount
+	p.Month = now.Format("2006-01")
+	budgets, err := h.store.Budgets.List(r.Context(), uid, p.Month)
+	if err != nil {
+		h.internal(w, r, err)
+		return
+	}
+	for _, b := range budgets {
+		if b.Reached() {
+			p.BudgetWarnings = append(p.BudgetWarnings, b)
+		}
+	}
 	p.Expenses, err = h.store.Expenses.GetAll(r.Context(), uid, f, 25, (p.Page-1)*25)
 	if err != nil {
 		h.internal(w, r, err)

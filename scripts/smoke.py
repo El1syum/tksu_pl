@@ -5,6 +5,7 @@ Creates two disposable accounts, removes their expenses, and logs out.
 The resulting empty accounts remain; their exact emails are printed for cleanup.
 """
 import csv
+from datetime import date
 import io
 import json
 import re
@@ -56,6 +57,7 @@ def check(condition, message):
 a, b = Client(), Client()
 tag = secrets.token_hex(5)
 emails = [f'smoke-{tag}-a@example.com', f'smoke-{tag}-b@example.com']
+print(json.dumps({'test_accounts': emails}), file=sys.stderr, flush=True)
 password = secrets.token_urlsafe(24)
 check(a.get('/ping') == 'pong', 'ping')
 for client, email in zip([a, b], emails):
@@ -83,7 +85,35 @@ check(len(rows) == 2 and rows[1][2] == "'=1+1" and rows[1][3] == '1500,25', 'CSV
 check(len(list(csv.reader(io.StringIO(b.get('/expenses/export')), delimiter=';'))) == 1, 'CSV isolation')
 body = a.post(f'/expenses/{expense_id}/delete', {})
 check('У каждой истории есть начало' in body, 'delete expense')
+today = date.today().isoformat()
+month = today[:7]
+a.get('/budgets')
+a.post('/budgets', {'month': month, 'category_id': '1', 'amount': '100'})
+body = a.post('/recurring', {'amount': '125', 'category_id': '1', 'description': 'Recurring smoke', 'date': today, 'frequency': 'monthly', 'end_date': ''})
+rule_id = re.search(r'/recurring/(\d+)/edit', body).group(1)
+body = a.get('/expenses')
+generated_id = re.search(r'/expenses/(\d+)/edit', body).group(1)
+check('Recurring smoke' in body and 'бюджет превышен на 25,00' in body, 'automatic expense and warning')
+check('Превышение на 25,00' in a.get('/budgets'), 'budget total')
+check('Recurring smoke' not in b.get('/recurring'), 'schedule isolation')
+check('Превышение' not in b.get('/budgets'), 'budget isolation')
+try:
+    b.get(f'/recurring/{rule_id}/edit')
+    raise AssertionError('foreign schedule is accessible')
+except HTTPError as error:
+    check(error.code == 404, 'foreign schedule status')
+a.post(f'/recurring/{rule_id}/pause', {})
+a.post(f'/recurring/{rule_id}/resume', {})
+a.post(f'/recurring/{rule_id}/edit', {'amount': '150', 'category_id': '1', 'description': 'Recurring smoke updated', 'date': today, 'frequency': 'weekly', 'end_date': ''})
+check(json.loads(a.get('/api/stats/by-category'))[0]['amount'] == 12500, 'no duplicates or history rewrites')
+a.post('/theme', {'theme': 'dark', 'return_to': '/stats'})
+check('data-theme="dark"' in a.get('/stats'), 'dark theme persistence')
+a.post('/theme', {'theme': 'system', 'return_to': '/recurring'})
+a.post(f'/recurring/{rule_id}/delete', {})
+check('Recurring smoke' in a.get('/expenses'), 'history survives schedule deletion')
+a.post(f'/expenses/{generated_id}/delete', {})
+a.post('/budgets/1/delete', {'month': month})
 for client in [a, b]:
     client.post('/logout', {})
     check('Рады видеть вас' in client.get('/expenses'), 'logout')
-print(json.dumps({'status': 'PASS', 'base_url': base, 'accounts': emails, 'checks': ['registration', 'login', 'create', 'edit', 'delete', 'filters', 'user isolation', 'category stats', 'monthly stats', 'CSV', 'logout']}, ensure_ascii=False))
+print(json.dumps({'status': 'PASS', 'base_url': base, 'accounts': emails, 'checks': ['registration', 'login', 'create', 'edit', 'delete', 'filters', 'user isolation', 'category stats', 'monthly stats', 'CSV', 'budgets and warnings', 'recurring schedules', 'pause/resume', 'idempotency', 'dark theme persistence', 'logout']}, ensure_ascii=False))

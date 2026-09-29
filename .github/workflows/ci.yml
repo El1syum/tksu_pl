@@ -21,3 +21,12 @@ jobs:
       - run: go build ./cmd/server
       - name: Container build
         run: docker build -t tksu-pl:ci .
+      - name: Fresh database HTTP scenario in Docker
+        run: |
+          docker run -d --name tksu-pl-check -p 127.0.0.1:8080:8080 \
+            -e HOST=0.0.0.0 -e PORT=8080 -e DATABASE_PATH=/data/expenses.db \
+            -e PUBLIC_URL=http://127.0.0.1:8080 -e COOKIE_SECURE=false \
+            -e TZ=Europe/Moscow -e SESSION_SECRET="$(openssl rand -hex 32)" tksu-pl:ci
+          trap 'docker logs --tail 20 tksu-pl-check; docker rm -f tksu-pl-check' EXIT
+          curl --fail --retry 15 --retry-connrefused --retry-delay 1 http://127.0.0.1:8080/ping
+          TZ=Europe/Moscow python3 scripts/smoke.py http://127.0.0.1:8080

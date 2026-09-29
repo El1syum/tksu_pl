@@ -9,10 +9,10 @@ import (
 
 type ExpenseRepository struct{ db *sql.DB }
 
-const expenseSelect = `SELECT e.id,e.user_id,e.amount,e.description,e.date,e.category_id,c.name,c.color,c.icon FROM expenses e JOIN categories c ON c.id=e.category_id`
+const expenseSelect = `SELECT e.id,e.user_id,e.amount,e.description,e.date,e.category_id,c.name,c.color,c.icon,COALESCE(e.recurring_id,0) FROM expenses e JOIN categories c ON c.id=e.category_id`
 
 func scanExpense(s interface{ Scan(...any) error }) (e models.Expense, err error) {
-	err = s.Scan(&e.ID, &e.UserID, &e.Amount, &e.Description, &e.Date, &e.CategoryID, &e.Category, &e.Color, &e.Icon)
+	err = s.Scan(&e.ID, &e.UserID, &e.Amount, &e.Description, &e.Date, &e.CategoryID, &e.Category, &e.Color, &e.Icon, &e.RecurringID)
 	return
 }
 func where(userID int64, f models.Filter) (string, []any) {

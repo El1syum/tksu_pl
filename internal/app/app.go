@@ -33,6 +33,14 @@ func Run() error {
 	server := &http.Server{Addr: net.JoinHostPort(c.Host, c.Port), Handler: h.Routes(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 32 << 10}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	generate := func() {
+		if n, err := store.Recurring.GenerateDue(ctx, time.Now(), 0); err != nil {
+			logger.Error("recurring generation failed", "error", err)
+		} else if n > 0 {
+			logger.Info("recurring expenses created", "count", n)
+		}
+	}
+	generate()
 	done := make(chan error, 1)
 	go func() {
 		logger.Info("server started", "address", server.Addr, "url", c.PublicURL)
@@ -40,6 +48,8 @@ func Run() error {
 	}()
 	ticker := time.NewTicker(time.Hour)
 	defer ticker.Stop()
+	recurringTicker := time.NewTicker(time.Minute)
+	defer recurringTicker.Stop()
 	for {
 		select {
 		case err := <-done:
@@ -51,6 +61,8 @@ func Run() error {
 			if err := store.Sessions.Cleanup(ctx); err != nil {
 				logger.Error("session cleanup failed", "error", err)
 			}
+		case <-recurringTicker.C:
+			generate()
 		case <-ctx.Done():
 			shutdown, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()

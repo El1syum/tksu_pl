@@ -17,6 +17,7 @@ type Category struct {
 	Name, Color, Icon string
 }
 type Expense struct {
+	RecurringID                              int64
 	ID, UserID, Amount, CategoryID           int64
 	Description, Date, Category, Color, Icon string
 }

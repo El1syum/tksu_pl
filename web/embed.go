@@ -12,7 +12,7 @@ var Files embed.FS
 // Version invalidates browser caches whenever first-party CSS or JavaScript changes.
 func Version() string {
 	hash := sha256.New()
-	for _, name := range []string{"static/app.css", "static/app.js", "static/stats.js"} {
+	for _, name := range []string{"static/app.css", "static/app.js", "static/stats.js", "static/chart-loader.js"} {
 		data, _ := Files.ReadFile(name)
 		hash.Write(data)
 	}
