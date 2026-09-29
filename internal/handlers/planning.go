@@ -16,6 +16,10 @@ func (h *Handler) setTheme(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.cookie(w, "theme", theme, 365*24*3600)
+	if r.Header.Get("Accept") == "application/json" {
+		h.json(w, http.StatusOK, map[string]string{"theme": theme})
+		return
+	}
 	destination := "/"
 	if u, err := url.Parse(r.PostForm.Get("return_to")); err == nil && !u.IsAbs() && u.Host == "" && strings.HasPrefix(u.Path, "/") && !strings.HasPrefix(u.Path, "//") && !strings.Contains(u.Path, "\\") {
 		destination = u.RequestURI()

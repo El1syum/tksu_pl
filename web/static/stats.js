@@ -73,8 +73,17 @@ async function loadChart(kind) {
     status.hidden = false; status.classList.add("error-text"); status.textContent = error.message || "Не удалось загрузить статистику. Попробуйте ещё раз.";
   } finally { if (request === requests[kind]) button.disabled = false; }
 }
+function updateChartTheme() {
+  if (!charts.month) return;
+  const style = getComputedStyle(document.documentElement);
+  const scales = charts.month.options.scales;
+  scales.x.ticks.color = scales.y.ticks.color = style.getPropertyValue("--muted").trim();
+  scales.y.grid.color = style.getPropertyValue("--border").trim();
+  charts.month.update("none");
+}
+document.addEventListener("themechange", updateChartTheme);
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-  if (document.documentElement.dataset.theme === "system") for (const kind of ["category", "month"]) loadChart(kind);
+  if (document.documentElement.dataset.theme === "system") updateChartTheme();
 });
 for (const kind of ["category", "month"]) {
   document.getElementById(`${kind}-stats-form`).addEventListener("submit", event => { event.preventDefault(); loadChart(kind); });
