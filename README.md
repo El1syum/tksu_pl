@@ -1,3 +1,5 @@
+Дополнительно задеплоил проект на свою впску и подвязал к домену от проекта, который не пошел
+
 # Траты — учёт личных расходов
 
 [![Go checks](https://github.com/El1syum/tksu_pl/actions/workflows/ci.yml/badge.svg)](https://github.com/El1syum/tksu_pl/actions/workflows/ci.yml)
